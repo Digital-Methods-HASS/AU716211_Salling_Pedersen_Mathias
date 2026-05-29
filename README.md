@@ -21,11 +21,6 @@ mortality rate calculation,
 statistical analysis,
 and data visualization.
 
-/Output
-Contains generated graphs and figures used in the final report.
-
-/Report
-Contains the final written assignment and portfolio material.
 
 Software and Packages
 The project was developed using:
