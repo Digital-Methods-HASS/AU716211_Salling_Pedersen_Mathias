@@ -1,0 +1,279 @@
+---
+title: "Sentiment Analysis GOT"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+## Your task
+
+Taking this script as a point of departure, apply sentiment analysis on the Game of Thrones. You will find a pdf in the data folder. What are the most common meaningful words and what emotions do you expect will dominate this volume? Are there any terms that are similarly ambiguous to the 'confidence' above? 
+
+```{r}
+library(tinytex)
+```
+
+```{r setup, include=FALSE}
+#First we download the necessary packages for the task.
+
+knitr::opts_chunk$set(echo = TRUE,
+                      warning = FALSE,
+                      message = FALSE)
+
+library(tidyverse)
+library(here)
+
+library(pdftools)
+library(tidytext)
+library(textdata) 
+library(ggwordcloud)
+```
+
+```{r get-document}
+#We load the file needed.
+
+got_path <- here("data","got.pdf")
+got_text <- pdf_text(got_path)
+```
+
+```{r split-lines}
+#Through the following code we separate lines into their own rows with starting 
+#and trailing spaces removed.
+
+got_df <- data.frame(got_text) %>% 
+  mutate(text_full = str_split(got_text, pattern = '\n')) %>% 
+  unnest(text_full) %>% 
+  mutate(text_full = str_trim(text_full)) 
+
+```
+
+```{r tokenize}
+#Now we make tokens. (individual words)
+
+got_tokens <- got_df %>% 
+  unnest_tokens(word, text_full)
+
+```
+
+```{r count-words}
+#Now we count the words numerically.
+
+got_wc <- got_tokens %>% 
+  count(word) %>% 
+  arrange(-n)
+got_wc
+```
+
+```{r stopwords}
+#Now we remove stop words as they give us little to work with in terms of semantics.
+
+got_stop <- got_tokens %>% 
+  anti_join(stop_words) %>% 
+  select(-got_text)
+```
+
+```{r count-words2}
+#We check the count again with the stopwords now removed.
+
+got_swc <- got_stop %>% 
+  count(word) %>% 
+  arrange(-n)
+```
+
+```{r skip-numbers}
+#Now we filter out numbers.
+
+got_no_numeric <- got_stop %>% 
+  filter(is.na(as.numeric(word)))
+```
+
+
+```{r wordcloud-prep}
+#First we calculate the length. It comes out to 11209.
+length(unique(got_no_numeric$word))
+
+#Now we filter out to only include the top 100 most common words.
+got_top100 <- got_no_numeric %>% 
+  count(word) %>% 
+  arrange(-n) %>% 
+  head(100)
+got_top100
+```
+
+```{r wordcloud}
+#Now we make a ggplot.
+got_cloud <- ggplot(data = got_top100, aes(label = word)) +
+  geom_text_wordcloud() +
+  theme_minimal()
+
+got_cloud
+```
+``````{r wordcloud-pro}
+#Now we customize it so it looks more aesthetic.
+ggplot(data = got_top100, aes(label = word, size = n)) +
+  geom_text_wordcloud_area(aes(color = n), shape = "diamond") +
+  scale_size_area(max_size = 20) +
+  scale_color_gradientn(colors = c("darkgreen","blue","red")) +
+  theme_minimal()
+``````
+Now we proceed with the sentiment analysis.
+
+```{r afinn}
+#Now we run the words through the ratings of most negative to most positive sentiment.
+
+get_sentiments(lexicon = "afinn")
+
+#Now we focus on the positive words.
+afinn_pos <- get_sentiments("afinn") %>% 
+  filter(value %in% c(3,4,5))
+
+afinn_pos
+```
+
+```{r bing}
+#Through the bing function we ascertain wether a word is positive or negative.
+get_sentiments(lexicon = "bing")
+
+```
+
+```{r nrc}
+#Through the nrc function we get more descriptive sentiments other than simply positive and negative.
+get_sentiments(lexicon = "nrc")
+
+```
+
+```{r bind-afinn}
+#Now we use a pipe function to bind words from got_stop to afinn.
+
+got_afinn <- got_stop %>% 
+  inner_join(get_sentiments("afinn"))
+got_afinn
+```
+
+```{r count-afinn}
+#Now we count these words.
+
+got_afinn_hist <- got_afinn %>% 
+  count(value)
+
+#Plot them: 
+
+ggplot(data = got_afinn_hist, aes(x = value, y = n)) +
+  geom_col(aes(fill = value)) +
+  theme_bw()
+```
+Now we can see that the most used value is -2 and there is a general emphasis on negative sentiment in the text.
+
+```{r afinn-2}
+#Now we investigate some of the positive words, specifically those rated 2 on the scale.
+
+got_afinn2 <- got_afinn %>% 
+  filter(value == 2)
+```
+
+```{r afinn-2-more}
+#Now we eliminate repetition and focus on unique words.
+
+unique(got_afinn2$word)
+
+#Now we count and plot them.
+
+got_afinn2_n <- got_afinn2 %>% 
+  count(word, sort = TRUE) %>% 
+  mutate(word = fct_reorder(factor(word), n))
+
+
+ggplot(data = got_afinn2_n, aes(x = word, y = n)) +
+  geom_col() +
+  coord_flip() +
+  theme_bw()
+
+
+```
+```{r summarize-afinn}
+#Now we summarize to find the median score of the sentiments.
+
+got_summary <- got_afinn %>% 
+  summarize(
+    mean_score = mean(value),
+    median_score = median(value)
+  )
+got_summary 
+```
+Here we once again see the tendency to have a negative sentiment in the text.
+
+```{r bind-bing}
+#Now we will use the ncr function to categorize the text with the feelings 
+#they are typically associated to.
+
+got_nrc <- got_stop %>% 
+  inner_join(get_sentiments("nrc"))
+```
+
+```{r check-exclusions}
+#Now we use the anti_join function to check which words were excluded from the text.
+
+got_exclude <- got_stop %>% 
+  anti_join(get_sentiments("nrc"))
+
+#Now we count the most excluded words.
+
+got_exclude_n <- got_exclude %>% 
+  count(word, sort = TRUE)
+
+head(got_exclude_n)
+```
+The most excluded word is 'Ser' which is the title for knights in the A Song Of Ice And Fire universe. As the story centers around nobility there are a lot of 'Sers' in the story, so it frequently shows up.
+
+
+```{r count-bing}
+#Now we count the words in their separate sentiments.
+
+got_nrc_n <- got_nrc %>% 
+  count(sentiment, sort = TRUE)
+
+#And plot them:
+
+ggplot(data = got_nrc_n, aes(x = sentiment, y = n)) +
+  geom_col(aes(fill = sentiment))+
+  theme_bw()
+```
+Now we can see the most frequently occuring sentiments, surprisingly this one shows a higher positive outcome.
+
+```{r count-nrc}
+#Now we combine both word and sentiment.
+
+got_nrc_n5 <- got_nrc %>% 
+  count(word,sentiment, sort = TRUE) %>% 
+  group_by(sentiment) %>% 
+  top_n(5) %>% 
+  ungroup()
+
+got_nrc_gg <- ggplot(data = got_nrc_n5, aes(x = reorder(word,n), y = n, fill = sentiment)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~sentiment, ncol = 2, scales = "free") +
+  coord_flip() +
+  theme_minimal() +
+  labs(x = "Word", y = "count")
+
+#Now we show it.
+
+got_nrc_gg
+
+#And then we save it.
+
+ggsave(plot = got_nrc_gg, 
+       here("figures","got_nrc_sentiment.png"), 
+       height = 8, 
+       width = 5)
+
+```
+This gives us a more detailed overlook of the frequently used words for each sentiment. 
+Now we can find out if there are similarly ambigious words such as 'confidence'.
+
+##Are there any terms that are similarly ambiguous to the 'confidence' above?
+In the plot above we can see that the term 'Lord' appears as the top in four categories, those being 'Positive', 'Negative', 'Trust' & 'Disgust'. Making it an ambigous relation depending on the character relevant in the chapter.
+
+## Answer
+
+GOT is a predominantly negatively connotated text. This is not a surprise as it is a story set in a grimdark medieval fantasy world bereft of justice and fairness. The story centers around the struggles of nobility and the titular 'Game of Thrones' that they play. As such there is much focus on the downsides of a feudal system and while the story does have a moral of hope and persevering the majority of the chapters center around something awful happening to someone who, most of the time, deserves it. - However this sentiment analysis might forego looking 'between the lines' and thereby miss the greater moral. It is important to not rely solely on the programming alone and be able to understand the context of the story.

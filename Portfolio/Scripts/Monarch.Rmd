@@ -1,0 +1,47 @@
+---
+title: "Monarch"
+author: "Mathias Salling"
+date: "2026-08-03"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r}
+#First we activate the needed packages.
+library(dplyr)
+library(magrittr)
+library(knitr)
+```
+
+
+```{r}
+library(tidyverse)
+
+#Then we load the data.
+
+DKmonarch <- read_csv("/Users/Aruuk/Desktop/kings.csv", na ="NULL")
+DKmonarch
+```
+
+```{r}
+#We use a pipe to add a new row called duration: 
+DKmonarch <- DKmonarch %>%
+  mutate(duration = End_year - Start_year)
+
+```
+
+
+```{r}
+library(ggplot2)
+
+#We make a pipe where we plot duration on the y-axis and birth on the x-axis:  
+DKmonarch %>%
+ggplot(aes(x = Birth_year , y = duration)) +
+geom_point() +
+geom_smooth()
+```
+This leave us with the obviously conclusion that the monarchs born later in the
+century have a longer duration time. This is obviously since the average age for 
+a person has gotten longer throughout the centuries. 
+
