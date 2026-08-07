@@ -1,0 +1,193 @@
+---
+title: "HumanCargo"
+author: "Mathias Salling Pedersen"
+date: "2026-08-07"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+
+```{r}
+
+#First we load the needed packages.
+
+library(tidyverse)
+library(ggplot2)
+library(readr)
+```
+
+```{r}
+
+#Now we load the needed dataset taken from SlaveVoyages.
+
+trans_atlantic <- read_csv("Data/trans-atlantic.csv")
+View(trans_atlantic)
+```
+
+```{r}
+
+#Now we establish the parameters we will create our graphs from.
+
+slave_data <- trans_atlantic %>%
+  select(
+    year = `Year arrived with captives`,
+    origin = `Imputed region where voyage began`,
+    destination = `Broad region of captive disembarkation (IMP)`,
+    embarked = `Total embarked (IMP)`,
+    disembarked = `Total disembarked (IMP)`
+  )
+slave_data <- slave_data %>%
+  mutate(
+    deaths = embarked - disembarked,
+    mortality_rate = deaths / embarked,
+    mortality_percent = mortality_rate * 100
+  )
+slave_data <- slave_data %>%
+  filter(
+    embarked > 0,
+    deaths >= 0
+  )
+```
+
+```{r}
+
+#Now we will calculate the mean mortality during a voyage.
+
+slave_data <- slave_data %>%
+  mutate(decade = floor(year / 10) * 10)
+summary(slave_data$mortality_percent)
+```
+From here we can see the mean mortality averages out at 14.
+
+```{r}
+
+#Now we lay out the most common origin for the voyaging ship.
+
+origin_stats <- slave_data %>%
+  count(origin, sort = TRUE)
+
+origin_stats
+```
+
+```{r}
+
+#Subsequently we chart the most common destination for the voyaging ship.
+
+destination_stats <- slave_data %>%
+  count(destination, sort = TRUE)
+
+destination_stats
+```
+
+```{r}
+
+#Now we create the first graph depicting the most common origins by number.
+
+origin_stats %>%
+  slice_max(n, n = 10) %>%
+  ggplot(aes(x = reorder(origin, n), y = n)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  labs(
+    title = "Top 10 Voyage Origin Regions (1750–1800)",
+    subtitle = "Based on recorded embarkation regions",
+    x = NULL,
+    y = "Number of Voyages"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(face = "bold"),
+    axis.text.y = element_text(size = 11),
+    panel.grid.minor = element_blank()
+  )
+```
+
+The presence of 'None' shows the sometimes lacking documentation.
+
+```{r}
+
+#Now we create the second graph charting most common destinations.
+
+destination_stats %>%
+  slice_max(n, n = 10) %>%
+  ggplot(aes(x = reorder(destination, n), y = n)) +
+  geom_col(fill = "darkred") +
+  coord_flip() +
+  labs(
+    title = "Top 10 Voyage Destination Regions (1750–1800)",
+    subtitle = "Based on recorded disembarkation regions",
+    x = NULL,
+    y = "Number of Voyages"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(face = "bold"),
+    axis.text.y = element_text(size = 11),
+    panel.grid.minor = element_blank()
+  )
+```
+The presence of 0 once again showcases lacking documentation.
+
+```{r}
+
+#Now we establish the volume of voyages per decade.
+
+voyages_by_decade <- slave_data %>%
+  count(decade)
+```
+
+```{r}
+
+#Now we create the third graph depicting 
+#the volume of voyages through decades.
+
+ggplot(voyages_by_decade, aes(x = decade, y = n)) +
+  geom_line(linewidth = 1.2, color = "steelblue") +
+  geom_point(size = 3, color = "steelblue") +
+  labs(
+    title = "Slave Voyages by Decade (1750–1800)",
+    subtitle = "Number of recorded voyages in the dataset",
+    x = "Decade",
+    y = "Number of Voyages"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(face = "bold"),
+    panel.grid.minor = element_blank()
+  )
+```
+
+```{r}
+
+#Now we calculate the mortality percentages during the voyage.
+
+mortality_by_decade <- slave_data %>%
+  group_by(decade) %>%
+  summarise(
+    avg_mortality = mean(mortality_percent, na.rm = TRUE)
+  )
+```
+
+```{r}
+
+#Now we create the fourth graph showcasing the average mortality
+#through the decades from 1750-1800.
+
+ggplot(mortality_by_decade, aes(x = decade, y = avg_mortality)) +
+  geom_line(linewidth = 1.2, color = "darkred") +
+  geom_point(size = 3, color = "darkred") +
+  labs(
+    title = "Average Mortality Rate by Decade (1750–1800)",
+    subtitle = "Calculated from embarked and disembarked captives",
+    x = "Decade",
+    y = "Average Mortality (%)"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(face = "bold"),
+    panel.grid.minor = element_blank()
+  )
+```
+This showcases a steady decline near the end of the 1700 hundreds.
+Noticeably there is an uptick at the tail end.
