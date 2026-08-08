@@ -11,13 +11,37 @@ Digital Archives &amp; Methods Exam Project
 
 **Repository Structure:**
 
-*In the primary folder you will find the projects LICENSE as well as the excel doc used for creating the Danish Monarchs. There is additionally a copy of the projects Portfolio and a README, which you are currently reading.*
+*In the primary folder you will find the projects LICENSE as well as the README, which you are currently reading.*
+
+*In the Portfolio folder you will find the following:*
+
+**Main Branch**
+
+You will find the Danish Monarchs csv and the Portfolio section of the assignment as a pdf. 
+
+**/Data**
+
+Contains the Game of Thrones pdf used for Sentiment Analysis as well as the Kings.csv used for the Danish Monarchs sections of the portfolio.
+
+**/Scripts**
+
+Contains the original scripts for the Game of Thrones and Danish Monarchs sections of the portfolio.
+
+---
 
 *Under the Project folder you will find the following:*
+
+**Main Branch**
+
+You will find the Final Project section of the assignment as a PDF file.
 
 **/Data**
 
 Contains the original CSV dataset downloaded from SlaveVoyages.
+
+**/Graphs**
+
+The four graphs created and analyzed in the project as PDF files.
 
 **/Scripts**
 
@@ -28,11 +52,12 @@ Contains the R script used for:
 - Statistical Analysis
 - Data Visualization.
 
-You will also find pdf files of each chart created and analyzed in this project for your perusal.
 
+---
 
 
 **Software and Packages**
+
 *The project was developed using:*
 
 R & RStudio
@@ -49,9 +74,9 @@ R & RStudio
 
 - Download or clone the repository
 
-- Open the .Rproj file in RStudio
+- Open the Human Cargo file in RStudio
 
-- Run the script located in /Scripts
+- Run the script
 
 - The visualizations and outputs will be generated automatically
 
@@ -69,3 +94,5 @@ https://www.slavevoyages.org
 This project is licensed under the MIT License.
 
 The original dataset remains subject to the terms and conditions of the SlaveVoyages database.
+
+---
